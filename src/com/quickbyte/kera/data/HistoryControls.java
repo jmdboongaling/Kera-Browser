@@ -3,52 +3,48 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.quickbyte.kera.gui;
+package com.quickbyte.kera.data;
 
-import com.quickbyte.kera.data.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.Timestamp;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import java.sql.*;
 import java.text.SimpleDateFormat;
+import javax.swing.DefaultListModel;
 
-public class History extends JPanel{
-    public JPanel containerPanel = new JPanel();
+
+public class HistoryControls {
     
-    
-    private JScrollPane historyPane;
-    private LoginAuthentication dataProcess = new LoginAuthentication();
-    private final FrameComponents compGui = new FrameComponents();
-    
-    
-    public JList getHistory(String user){
+    public DefaultListModel<String> grabHistory(String user){
         DefaultListModel<String> listModel = new DefaultListModel<>();
-        JList<String> historyList = new JList<>(listModel);
-        historyList.setFont(compGui.componentFont);
         String SQL = "SELECT * FROM APP.USER_HISTORY WHERE USERNAME = ? ORDER BY DATE_TIME DESC";
-        
-        System.out.println(user);
         try{
             Connection dbConnect = DBConnect.dbConnect();
             PreparedStatement queryStatement = dbConnect.prepareStatement(SQL);
-            
             queryStatement.setString(1, user);
             ResultSet rs = queryStatement.executeQuery();
             while(rs.next()){
                 listModel.addElement(new SimpleDateFormat("MMM dd, yyyy 'at' hh aa").format((rs.getTimestamp("DATE_TIME"))) + "   |   " + rs.getString("ADDRESS"));
             }
-            
-            
+            return listModel;
+        }catch(Exception e){
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    public void commitHistory(Timestamp dateTime, String address, String user){
+        try{
+            String SQL = "INSERT INTO APP.USER_HISTORY (DATE_TIME, ADDRESS, USERNAME)"+
+                         " VALUES(?, ?, ?)";
+            Connection dbConn = DBConnect.dbConnect();
+            PreparedStatement queryStatement = dbConn.prepareStatement(SQL);
+            queryStatement.setTimestamp(1, dateTime);
+            queryStatement.setString(2, address);
+            queryStatement.setString(3, user);
+            queryStatement.executeUpdate();
         }catch(Exception e){
             e.printStackTrace();
         }
-        //sessionList.setFixedCellHeight(1);
-        return historyList;
     }
-    
 }
